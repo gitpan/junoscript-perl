@@ -1,9 +1,9 @@
 #
-# $Id: Constants.pm,v 1.4 2001/06/29 14:40:15 cynthia Exp $
+# $Id: required-mod.pl,v 1.7 2003/03/02 11:12:01 dsw Exp $
 #
 # COPYRIGHT AND LICENSE
-# Copyright (c) 2001, Juniper Networks, Inc.
-# All rights reserved.
+# Copyright (c) 2001, 2003, Juniper Networks, Inc.  
+# All rights reserved.  
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
@@ -28,45 +28,48 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 
-
-
-#
-# This file implements a set of packages that constitute 'TIX', the
-# Trivial Interface to XML. This is a truely simple, perl-based API
-# to allow natural language constructs to access XML data sets.
-#
-# These packages should probably be 'XML::TIX::Constants'
-#
-
-package JUNOS::TIX::Constants;
-
-use strict;
-use Carp;
-use vars qw(@ISA @EXPORT_OK %EXPORT_TAGS $debug);
-
-require Exporter;
-@ISA = qw(Exporter);
-@EXPORT_OK = qw(Keyed Key Attrs Order Name dbgpr $debug);
-%EXPORT_TAGS = (base => [ @EXPORT_OK ]);
-
-$debug = 1;
+use install;
 
 #
-# Constants
-#  These strings are not valid tag names and are used as hash indices to
-#  stuff additional information into node hashes.
+# Set AUTOFLUSH to true
 #
-sub Keyed () { "__Element Keyed__" }
-sub Key   () { "key" }
-sub Attrs () { "__Element Attributes__" }
-sub Order () { "__Element Order__" }
-sub Name  () { "__Element Name__" }
+$| = 1;
 
-sub dbgpr
-{
-    print "DEBUG:: ", join(" ", @_), "\n";
+use constant USED_BY_DEFAULT => 'default';
+
+print "\nIt will take a few minutes to look for all required modules...\n";
+
+my $access = shift || "all";
+my $used_by = shift || USED_BY_DEFAULT;
+my @modules = install::get_auto_classes($access, $used_by);
+my @byhand = install::get_manual_classes($access, $used_by);
+install::redirect_output("$0.log", 0);
+my @missing = ();
+for my $class (@modules,@byhand) {
+    if (install::is_c_module($class)) {
+        push(@missing, $class) if (!install::c_module_exists($class, $ENV{PERL5LIB}));
+    } else {
+        my $vers = install::get_version($class);
+        push(@missing, $class) if (!install::class_exists($class, $vers));
+    }
 }
 
-1;
+install::restore_output;
+
+if(scalar(@missing)) {
+    print "\nThe following modules are not found:\n";
+    foreach my $m (@missing) {
+	print "    $m\n";
+    }
+    print "Please make sure the search paths for perl are correct.\n";
+    print join("\n", @INC),"\n";
+    print "If the search paths are correct, run install-prereqs.pl to \n";
+    die "install the missing modules.\n\n";
+}
+
+if ($used_by eq USED_BY_DEFAULT){
+    print "\nAll modules required by JUNOS::Device are installed.\n\n";
+} else {
+    print "\nAll modules required by $used_by are installed.\n\n";
+}

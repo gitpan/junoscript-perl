@@ -1,5 +1,5 @@
 #
-# $Id: Methods.pm,v 1.23 2004/06/07 21:34:33 trostler Exp $
+# $Id: Methods.pm,v 1.22 2004/01/09 19:03:35 rjohnst Exp $
 #
 # COPYRIGHT AND LICENSE
 # Copyright (c) 2001-2004, Juniper Networks, Inc.  
@@ -73,7 +73,6 @@ $ATTRIBUTE = bless {}, "ATTRIBUTE";
     commit_configuration => {
 	check => $TOGGLE,
 	confirmed => $TOGGLE,
-	synchronize => $TOGGLE,
 	"confirm-timeout" => $STRING
     },
     close_configuration => $NO_ARGS,
